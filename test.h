@@ -46,8 +46,11 @@ struct test_file_metadata __attribute__((weak)) * test_file_head;
 
 #define SET_FAILURE(_message, _owned)                                                    \
 	metadata->failure = (struct test_failure) {                                      \
-		.message = _message, .file = __FILE__, .line = __LINE__,                 \
-		.present = true, .owned = _owned,                                        \
+		.present = true,                                                         \
+		.message = _message,                                                     \
+		.file    = __FILE__,                                                     \
+		.line    = __LINE__,                                                     \
+		.owned   = _owned,                                                       \
 	}
 
 #define TEST_EQUAL(a, b)                                                                 \
@@ -119,19 +122,21 @@ struct test_file_metadata __attribute__((weak)) * test_file_head;
 #define TEST_CASE(_name)                                                                  \
 	static void __test_h_##_name(struct test_case_metadata *,                         \
 	                             struct test_file_metadata *);                        \
-	static struct test_file_metadata __test_h_file;                                   \
+	static struct test_file_metadata __test_h_file##_name;                            \
 	static struct test_case_metadata __test_h_meta_##_name = {                        \
-	    .name = #_name,                                                               \
 	    .fn = __test_h_##_name,                                                       \
+	    .failure = {},                                                                \
+	    .name = #_name,                                                               \
+	    .next = 0,                                                                    \
 	};                                                                                \
 	static void __attribute__((constructor(101))) __test_h_##_name##_register(void) { \
-		__test_h_meta_##_name.next = __test_h_file.tests;                         \
-		__test_h_file.tests = &__test_h_meta_##_name;                             \
-		if (!__test_h_file.registered) {                                          \
-			__test_h_file.name = __FILE__;                                    \
-			__test_h_file.next = test_file_head;                              \
-			test_file_head = &__test_h_file;                                  \
-			__test_h_file.registered = true;                                  \
+		__test_h_meta_##_name.next = __test_h_file##_name.tests;                  \
+		__test_h_file##_name.tests = &__test_h_meta_##_name;                      \
+		if (!__test_h_file##_name.registered) {                                   \
+			__test_h_file##_name.name = __FILE__;                             \
+			__test_h_file##_name.next = test_file_head;                       \
+			test_file_head = &__test_h_file##_name;                           \
+			__test_h_file##_name.registered = true;                           \
 		}                                                                         \
 	}                                                                                 \
 	static void __test_h_##_name(                                                     \
